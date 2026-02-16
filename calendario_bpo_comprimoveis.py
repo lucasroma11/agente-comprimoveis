@@ -264,7 +264,7 @@ CONDOMINIOS = [
 # ============================================================================
 
 # Carrega a logo do GitHub
-logo_url = "https://raw.githubusercontent.com/lucasroma11/agente-comprimoveis/main/llogo-comprimoveis-1.png"
+logo_url = "https://raw.githubusercontent.com/lucasroma11/agente-comprimoveis/main/logo-comprimoveis-1.png"
 
 st.markdown(f"""
 <div class="main-header">
