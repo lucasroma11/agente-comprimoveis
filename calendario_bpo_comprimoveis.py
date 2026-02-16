@@ -28,51 +28,171 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* Cores Comprimóveis: Azul escuro + Laranja */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+    
+    /* ========== VARIÁVEIS ========== */
     :root {
         --azul-comprimoveis: #1a2942;
         --laranja-comprimoveis: #ff6b35;
         --azul-claro: #3d5a80;
     }
     
-    /* Header Principal */
+    /* ========== GLOBAL ========== */
+    * {
+        font-family: 'Poppins', sans-serif;
+    }
+    
+    /* Background Suave */
+    .stApp {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+    
+    /* ========== HEADER PREMIUM ========== */
     .main-header {
         background: linear-gradient(135deg, #1a2942 0%, #3d5a80 100%);
-        padding: 2rem;
-        border-radius: 10px;
+        padding: 2.5rem 2rem;
+        border-radius: 20px;
         color: white;
         text-align: center;
         margin-bottom: 2rem;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        animation: slideDown 0.6s ease-out;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .main-header::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #ff6b35, transparent);
+        animation: shimmer 3s ease-in-out infinite;
+    }
+    
+    @keyframes shimmer {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 1; }
     }
     
     .main-header h1 {
         margin: 0;
         font-size: 2.5rem;
         font-weight: bold;
+        background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
     
     .main-header p {
-        .main-header img {
+        margin: 0.5rem 0 0 0;
+        font-size: 1.1rem;
+        opacity: 0.95;
+    }
+    
+    .main-header img {
         background: white;
         padding: 0.5rem 1rem;
         border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        max-width: 250px;
+        margin-bottom: 1rem;
+        animation: float 6s ease-in-out infinite;
     }
     
-    /* Cards de Tarefas */
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-8px);
+        }
+    }
+    
+    /* ========== STATS CARDS PREMIUM ========== */
+    .stat-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        color: white;
+        padding: 1.8rem;
+        border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: scaleIn 0.5s ease both;
+    }
+    
+    @keyframes scaleIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 12px 30px rgba(255, 107, 53, 0.2);
+    }
+    
+    .stat-number {
+        font-size: 3rem;
+        font-weight: bold;
+        color: #ff6b35;
+        font-family: 'Space Mono', monospace;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .stat-label {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        color: #64748b;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 0.5rem;
+    }
+    
+    /* ========== TASK CARDS PREMIUM ========== */
     .tarefa-card {
         background: white;
-        border-left: 5px solid #ff6b35;
-        padding: 1rem;
-        margin: 0.5rem 0;
-        border-radius: 5px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-left: 4px solid #ff6b35;
+        padding: 1.2rem;
+        margin: 0.8rem 0;
+        border-radius: 12px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
         color: #1a2942 !important;
+        transition: all 0.3s ease;
+    }
+    
+    .tarefa-card:hover {
+        transform: translateX(6px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        border-left-width: 6px;
     }
     
     .tarefa-card strong {
         color: #1a2942 !important;
+        font-weight: 600;
     }
     
     .tarefa-card small {
@@ -80,69 +200,133 @@ st.markdown("""
     }
     
     .tarefa-concluida {
-        background: #e8f5e9;
-        border-left: 5px solid #4caf50;
-        opacity: 0.8;
+        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+        border-left: 4px solid #4caf50;
+        opacity: 0.85;
         color: #2e7d32 !important;
     }
     
     .tarefa-urgente {
-        background: #ffebee;
-        border-left: 5px solid #f44336;
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        border-left: 4px solid #f44336;
         color: #c62828 !important;
+        animation: urgentPulse 2s ease-in-out infinite;
     }
     
-    /* Estatísticas */
-    .stat-card {
+    @keyframes urgentPulse {
+        0%, 100% {
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        50% {
+            box-shadow: 0 3px 10px rgba(244, 67, 54, 0.3);
+        }
+    }
+    
+    /* ========== BADGES ========== */
+    .cond-badge {
+        display: inline-block;
         background: linear-gradient(135deg, #1a2942 0%, #3d5a80 100%);
         color: white;
-        padding: 1.5rem;
-        border-radius: 10px;
-        text-align: center;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        padding: 0.35rem 0.9rem;
+        border-radius: 16px;
+        font-size: 0.85rem;
+        margin: 0.2rem;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(26, 41, 66, 0.3);
+        transition: transform 0.2s ease;
     }
     
-    .stat-number {
-        font-size: 3rem;
-        font-weight: bold;
-        color: #ff6b35;
+    .cond-badge:hover {
+        transform: scale(1.05);
     }
     
-    .stat-label {
-        font-size: 1.1rem;
-        opacity: 0.9;
-    }
-    
-    /* Botões */
+    /* ========== BUTTONS PREMIUM ========== */
     .stButton>button {
         background: linear-gradient(135deg, #ff6b35 0%, #ff8c61 100%);
         color: white;
         border: none;
-        padding: 0.5rem 2rem;
-        border-radius: 5px;
+        padding: 0.7rem 2rem;
+        border-radius: 10px;
         font-weight: bold;
-        transition: all 0.3s;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
     }
     
     .stButton>button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(255,107,53,0.3);
+        box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
     }
     
-    /* Sidebar */
-    .css-1d391kg {
-        background-color: #f8f9fa;
+    .stButton>button:active {
+        transform: translateY(0);
     }
     
-    /* Badges de Condomínio */
-    .cond-badge {
-        display: inline-block;
-        background: #1a2942;
-        color: white;
-        padding: 0.3rem 0.8rem;
-        border-radius: 15px;
-        font-size: 0.85rem;
-        margin: 0.2rem;
+    /* ========== PROGRESS BAR ========== */
+    .stProgress > div > div {
+        background: linear-gradient(90deg, #ff6b35 0%, #ff8c61 100%);
+        border-radius: 10px;
+        height: 10px;
+    }
+    
+    /* ========== TABS PREMIUM ========== */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(10px);
+        padding: 0.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 8px;
+        padding: 0.7rem 1.3rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #1a2942 0%, #3d5a80 100%);
+        color: white !important;
+        box-shadow: 0 4px 12px rgba(26, 41, 66, 0.3);
+    }
+    
+    /* ========== SIDEBAR ========== */
+    .css-1d391kg, [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, rgba(226, 232, 240, 0.95) 100%);
+        backdrop-filter: blur(10px);
+    }
+    
+    /* ========== SCROLLBAR ========== */
+    ::-webkit-scrollbar {
+        width: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #1a2942 0%, #ff6b35 100%);
+        border-radius: 10px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #0d1829 0%, #e64d1f 100%);
+    }
+    
+    /* ========== RESPONSIVO ========== */
+    @media (max-width: 768px) {
+        .main-header h1 {
+            font-size: 2rem;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
