@@ -4,6 +4,7 @@ Consultoria & Administração - "A chave do seu sonho está aqui"
 
 Sistema de Gerenciamento de Tarefas Mensais
 Para: Vanessa (Administração)
+Versão 2.0 - PREMIUM EDITION
 """
 
 import streamlit as st
@@ -23,7 +24,7 @@ st.set_page_config(
 )
 
 # ============================================================================
-# CSS CUSTOMIZADO - IDENTIDADE COMPRIMÓVEIS
+# CSS PREMIUM
 # ============================================================================
 
 st.markdown("""
@@ -39,25 +40,27 @@ st.markdown("""
     
     /* ========== GLOBAL ========== */
     * {
-        font-family: 'Poppins', sans-serif;
+        font-family: 'Poppins', sans-serif !important;
     }
     
-    /* Background Suave */
+    /* Background Premium */
     .stApp {
         background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     }
     
     /* ========== HEADER PREMIUM ========== */
     .main-header {
-        background: linear-gradient(135deg, #1a2942 0%, #3d5a80 100%);
+        background: linear-gradient(135deg, rgba(26, 41, 66, 0.95) 0%, rgba(61, 90, 128, 0.95) 100%);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
         padding: 2.5rem 2rem;
-        border-radius: 20px;
+        border-radius: 24px;
         color: white;
         text-align: center;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        margin-bottom: 2.5rem;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        animation: slideDown 0.6s ease-out;
+        animation: slideDown 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         position: relative;
         overflow: hidden;
     }
@@ -65,7 +68,7 @@ st.markdown("""
     @keyframes slideDown {
         from {
             opacity: 0;
-            transform: translateY(-20px);
+            transform: translateY(-30px);
         }
         to {
             opacity: 1;
@@ -73,121 +76,178 @@ st.markdown("""
         }
     }
     
-    .main-header::after {
+    .main-header::before {
         content: '';
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, #ff6b35, transparent);
+        height: 3px;
+        background: linear-gradient(90deg, transparent 0%, #ff6b35 50%, transparent 100%);
         animation: shimmer 3s ease-in-out infinite;
     }
     
     @keyframes shimmer {
-        0%, 100% { opacity: 0.3; }
+        0%, 100% { opacity: 0.5; }
         50% { opacity: 1; }
+    }
+    
+    .main-header::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255, 107, 53, 0.1) 0%, transparent 70%);
+        animation: pulse 8s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.4; }
+        50% { transform: scale(1.05); opacity: 0.6; }
     }
     
     .main-header h1 {
         margin: 0;
-        font-size: 2.5rem;
-        font-weight: bold;
+        font-size: 2.8rem;
+        font-weight: 800;
         background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
+        position: relative;
+        z-index: 2;
+        letter-spacing: -0.02em;
     }
     
     .main-header p {
-        margin: 0.5rem 0 0 0;
-        font-size: 1.1rem;
+        margin: 0.6rem 0 0 0;
+        font-size: 1.15rem;
         opacity: 0.95;
+        position: relative;
+        z-index: 2;
     }
     
     .main-header img {
         background: white;
-        padding: 0.5rem 1rem;
-        border-radius: 10px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        max-width: 250px;
-        margin-bottom: 1rem;
+        padding: 0.6rem 1.2rem;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+        max-width: 260px;
+        margin-bottom: 1.5rem;
         animation: float 6s ease-in-out infinite;
+        position: relative;
+        z-index: 2;
     }
     
     @keyframes float {
-        0%, 100% {
-            transform: translateY(0px);
-        }
-        50% {
-            transform: translateY(-8px);
-        }
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-12px); }
     }
     
     /* ========== STATS CARDS PREMIUM ========== */
     .stat-card {
-        background: rgba(255, 255, 255, 0.8);
+        background: rgba(255, 255, 255, 0.85);
         backdrop-filter: blur(10px);
-        color: white;
-        padding: 1.8rem;
-        border-radius: 16px;
+        -webkit-backdrop-filter: blur(10px);
+        padding: 2rem 1.5rem;
+        border-radius: 20px;
         text-align: center;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        animation: scaleIn 0.5s ease both;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        animation: scaleIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        position: relative;
+        overflow: hidden;
     }
     
     @keyframes scaleIn {
         from {
             opacity: 0;
-            transform: scale(0.95);
+            transform: scale(0.9) translateY(20px);
         }
         to {
             opacity: 1;
-            transform: scale(1);
+            transform: scale(1) translateY(0);
         }
     }
     
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--azul-comprimoveis), var(--laranja-comprimoveis));
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
     .stat-card:hover {
-        transform: translateY(-5px) scale(1.02);
-        box-shadow: 0 12px 30px rgba(255, 107, 53, 0.2);
+        transform: translateY(-10px) scale(1.03);
+        box-shadow: 0 20px 50px rgba(255, 107, 53, 0.25);
+    }
+    
+    .stat-card:hover::before {
+        transform: scaleX(1);
     }
     
     .stat-number {
-        font-size: 3rem;
-        font-weight: bold;
-        color: #ff6b35;
-        font-family: 'Space Mono', monospace;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        font-size: 3.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--azul-comprimoveis) 0%, var(--laranja-comprimoveis) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0.5rem 0;
+        font-family: 'Space Mono', monospace !important;
+        line-height: 1;
     }
     
     .stat-label {
-        font-size: 1.1rem;
-        opacity: 0.9;
         color: #64748b;
-        font-weight: 500;
+        font-size: 0.95rem;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.08em;
         margin-top: 0.5rem;
     }
     
     /* ========== TASK CARDS PREMIUM ========== */
     .tarefa-card {
         background: white;
-        border-left: 4px solid #ff6b35;
-        padding: 1.2rem;
-        margin: 0.8rem 0;
-        border-radius: 12px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        border-left: 5px solid var(--laranja-comprimoveis);
+        padding: 1.5rem;
+        margin: 1rem 0;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
         color: #1a2942 !important;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .tarefa-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 5px;
+        height: 100%;
+        background: linear-gradient(180deg, var(--laranja-comprimoveis), #ff8c61);
+        transition: width 0.3s ease;
     }
     
     .tarefa-card:hover {
-        transform: translateX(6px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-        border-left-width: 6px;
+        transform: translateX(8px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    }
+    
+    .tarefa-card:hover::before {
+        width: 8px;
     }
     
     .tarefa-card strong {
@@ -201,25 +261,33 @@ st.markdown("""
     
     .tarefa-concluida {
         background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-        border-left: 4px solid #4caf50;
-        opacity: 0.85;
-        color: #2e7d32 !important;
+        border-left-color: #10b981;
+        opacity: 0.9;
+        color: #065f46 !important;
+    }
+    
+    .tarefa-concluida::before {
+        background: linear-gradient(180deg, #10b981, #34d399);
     }
     
     .tarefa-urgente {
         background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-        border-left: 4px solid #f44336;
-        color: #c62828 !important;
-        animation: urgentPulse 2s ease-in-out infinite;
+        border-left-color: #ef4444;
+        color: #991b1b !important;
+        animation: urgentPulse 2.5s ease-in-out infinite;
     }
     
     @keyframes urgentPulse {
         0%, 100% {
-            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
         }
         50% {
-            box-shadow: 0 3px 10px rgba(244, 67, 54, 0.3);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3), 0 0 0 4px rgba(239, 68, 68, 0.1);
         }
+    }
+    
+    .tarefa-urgente::before {
+        background: linear-gradient(180deg, #ef4444, #f87171);
     }
     
     /* ========== BADGES ========== */
@@ -227,12 +295,12 @@ st.markdown("""
         display: inline-block;
         background: linear-gradient(135deg, #1a2942 0%, #3d5a80 100%);
         color: white;
-        padding: 0.35rem 0.9rem;
-        border-radius: 16px;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
         font-size: 0.85rem;
-        margin: 0.2rem;
+        margin: 0 0.3rem 0.5rem 0;
         font-weight: 600;
-        box-shadow: 0 2px 8px rgba(26, 41, 66, 0.3);
+        box-shadow: 0 4px 12px rgba(26, 41, 66, 0.25);
         transition: transform 0.2s ease;
     }
     
@@ -242,76 +310,78 @@ st.markdown("""
     
     /* ========== BUTTONS PREMIUM ========== */
     .stButton>button {
-        background: linear-gradient(135deg, #ff6b35 0%, #ff8c61 100%);
-        color: white;
-        border: none;
-        padding: 0.7rem 2rem;
-        border-radius: 10px;
-        font-weight: bold;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+        background: linear-gradient(135deg, #ff6b35 0%, #ff8c61 100%) !important;
+        color: white !important;
+        border: none !important;
+        padding: 0.75rem 2rem !important;
+        border-radius: 12px !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        box-shadow: 0 6px 20px rgba(255, 107, 53, 0.3) !important;
+        position: relative;
+        overflow: hidden;
     }
     
     .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+        transform: translateY(-3px) scale(1.02) !important;
+        box-shadow: 0 10px 30px rgba(255, 107, 53, 0.4) !important;
     }
     
     .stButton>button:active {
-        transform: translateY(0);
+        transform: translateY(-1px) scale(0.98) !important;
     }
     
     /* ========== PROGRESS BAR ========== */
     .stProgress > div > div {
-        background: linear-gradient(90deg, #ff6b35 0%, #ff8c61 100%);
-        border-radius: 10px;
-        height: 10px;
+        background: linear-gradient(90deg, #ff6b35 0%, #ff8c61 100%) !important;
+        border-radius: 10px !important;
+        height: 14px !important;
     }
     
     /* ========== TABS PREMIUM ========== */
     .stTabs [data-baseweb="tab-list"] {
         gap: 0.5rem;
-        background: rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(10px);
         padding: 0.5rem;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
     
     .stTabs [data-baseweb="tab"] {
-        border-radius: 8px;
-        padding: 0.7rem 1.3rem;
+        border-radius: 10px;
+        padding: 0.75rem 1.5rem;
         font-weight: 600;
         transition: all 0.3s ease;
     }
     
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #1a2942 0%, #3d5a80 100%);
+        background: linear-gradient(135deg, #1a2942 0%, #3d5a80 100%) !important;
         color: white !important;
-        box-shadow: 0 4px 12px rgba(26, 41, 66, 0.3);
+        box-shadow: 0 6px 20px rgba(26, 41, 66, 0.3);
     }
     
     /* ========== SIDEBAR ========== */
     .css-1d391kg, [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, rgba(226, 232, 240, 0.95) 100%);
+        background: linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, rgba(226, 232, 240, 0.98) 100%);
         backdrop-filter: blur(10px);
     }
     
     /* ========== SCROLLBAR ========== */
     ::-webkit-scrollbar {
-        width: 10px;
+        width: 12px;
     }
     
     ::-webkit-scrollbar-track {
-        background: rgba(0, 0, 0, 0.05);
+        background: rgba(0, 0, 0, 0.03);
         border-radius: 10px;
     }
     
     ::-webkit-scrollbar-thumb {
         background: linear-gradient(180deg, #1a2942 0%, #ff6b35 100%);
         border-radius: 10px;
-        border: 2px solid rgba(255, 255, 255, 0.3);
+        border: 2px solid rgba(255, 255, 255, 0.5);
     }
     
     ::-webkit-scrollbar-thumb:hover {
@@ -326,6 +396,10 @@ st.markdown("""
         
         .stat-number {
             font-size: 2.5rem;
+        }
+        
+        .main-header img {
+            max-width: 200px;
         }
     }
 </style>
@@ -447,18 +521,20 @@ CONDOMINIOS = [
 # HEADER PRINCIPAL COM LOGO
 # ============================================================================
 
-# Carrega a logo do GitHub
 logo_url = "https://raw.githubusercontent.com/lucasroma11/agente-comprimoveis/main/logo-comprimoveis-1.png"
 
 st.markdown(f"""
 <div class="main-header">
-    <img src="{logo_url}" alt="Comprimóveis" style="max-width: 200px; margin-bottom: 1rem;">
+    <img src="{logo_url}" alt="Comprimóveis">
     <h1>🏢 Calendário BPO - Comprimóveis</h1>
     <p>Consultoria & Administração</p>
     <p style="font-size: 1rem; margin-top: 0.5rem;">"A chave do seu sonho está aqui"</p>
     <p style="font-size: 0.9rem; margin-top: 1rem; opacity: 0.8;">CRECI: 37215 | Sistema de Gerenciamento para Vanessa</p>
 </div>
 """, unsafe_allow_html=True)
+
+# Continua no próximo bloco...
+
 # ============================================================================
 # INICIALIZAÇÃO DO ESTADO
 # ============================================================================
@@ -480,7 +556,6 @@ with st.sidebar:
     st.markdown("### ⚙️ Configurações")
     st.markdown("---")
     
-    # Seleção de data
     col1, col2 = st.columns(2)
     with col1:
         mes_selecionado = st.selectbox(
@@ -505,7 +580,6 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # Filtro por condomínio
     st.markdown("### 🏢 Filtrar por Condomínio")
     condominio_filtro = st.multiselect(
         "Selecione:",
@@ -515,7 +589,6 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # Filtro por tipo
     st.markdown("### 📋 Filtrar por Tipo")
     tipo_filtro = st.multiselect(
         "Selecione:",
@@ -525,7 +598,6 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # Botões de ação
     if st.button("🔄 Resetar Tarefas do Mês"):
         chave_mes = f"{st.session_state.mes_atual}/{st.session_state.ano_atual}"
         if chave_mes in st.session_state.tarefas_concluidas:
@@ -552,7 +624,6 @@ with st.sidebar:
 # ESTATÍSTICAS PRINCIPAIS
 # ============================================================================
 
-# Calcula estatísticas
 total_tarefas = sum(len(tarefas) for tarefas in TAREFAS_POR_DIA.values())
 chave_mes = f"{st.session_state.mes_atual}/{st.session_state.ano_atual}"
 tarefas_concluidas_mes = st.session_state.tarefas_concluidas.get(chave_mes, [])
@@ -560,14 +631,6 @@ total_concluidas = len(tarefas_concluidas_mes)
 total_pendentes = total_tarefas - total_concluidas
 progresso = (total_concluidas / total_tarefas * 100) if total_tarefas > 0 else 0
 
-# Valor total estimado
-valor_total = sum(
-    tarefa.get("valor", 0) or 0
-    for tarefas in TAREFAS_POR_DIA.values()
-    for tarefa in tarefas
-)
-
-# Exibe estatísticas
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
@@ -602,7 +665,6 @@ with col4:
     </div>
     """, unsafe_allow_html=True)
 
-# Barra de progresso
 st.progress(progresso / 100)
 
 st.markdown("---")
@@ -632,7 +694,6 @@ if (mes_hoje == st.session_state.mes_atual and
         with col1:
             classe = "tarefa-concluida" if concluida else "tarefa-urgente"
             
-            # Ícone por tipo
             icones = {
                 "Boleto": "📄",
                 "PIX": "💸",
@@ -675,7 +736,6 @@ if (mes_hoje == st.session_state.mes_atual and
 
 st.markdown("### 📅 Todas as Tarefas do Mês")
 
-# Abas por semana
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📅 Dias 1-7", "📅 Dias 8-15", "📅 Dias 16-22", "📅 Dias 23-31", "📊 Resumo"
 ])
@@ -688,7 +748,6 @@ def exibir_tarefas_periodo(dias, tab):
                 
                 tarefas = TAREFAS_POR_DIA[dia]
                 
-                # Aplicar filtros
                 tarefas_filtradas = tarefas
                 
                 if "Todos" not in condominio_filtro:
@@ -710,7 +769,6 @@ def exibir_tarefas_periodo(dias, tab):
                     with col1:
                         classe = "tarefa-concluida" if concluida else "tarefa-card"
                         
-                        # Ícone por tipo
                         icones = {
                             "Boleto": "📄",
                             "PIX": "💸",
@@ -747,13 +805,11 @@ def exibir_tarefas_periodo(dias, tab):
                 
                 st.markdown("---")
 
-# Exibir tarefas por período
 exibir_tarefas_periodo(range(1, 8), tab1)
 exibir_tarefas_periodo(range(8, 16), tab2)
 exibir_tarefas_periodo(range(16, 23), tab3)
 exibir_tarefas_periodo(range(23, 32), tab4)
 
-# Resumo
 with tab5:
     st.markdown("### 📊 Resumo por Condomínio")
     
@@ -786,9 +842,27 @@ st.markdown("---")
 st.markdown("""
 <div style="text-align: center; color: #666; font-size: 0.9rem;">
     <p>🏢 <strong>Comprimóveis - Consultoria & Administração</strong></p>
-    <p>Sistema BPO desenvolvido por Lucas | CRECI: 37215</p>
+    <p>Sistema BPO Premium Edition v2.0 | Desenvolvido por Lucas | CRECI: 37215</p>
     <p style="font-size: 0.8rem; margin-top: 0.5rem;">
         📞 (21) 3933-4137 | (21) 2421-3375 | WhatsApp: (21) 99372-1324
     </p>
 </div>
 """, unsafe_allow_html=True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
