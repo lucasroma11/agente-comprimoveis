@@ -66,17 +66,28 @@ st.markdown("""
         margin: 0.5rem 0;
         border-radius: 5px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        color: #1a2942 !important;
+    }
+    
+    .tarefa-card strong {
+        color: #1a2942 !important;
+    }
+    
+    .tarefa-card small {
+        color: #666 !important;
     }
     
     .tarefa-concluida {
         background: #e8f5e9;
         border-left: 5px solid #4caf50;
-        opacity: 0.7;
+        opacity: 0.8;
+        color: #2e7d32 !important;
     }
     
     .tarefa-urgente {
         background: #ffebee;
         border-left: 5px solid #f44336;
+        color: #c62828 !important;
     }
     
     /* Estatísticas */
@@ -141,8 +152,20 @@ st.markdown("""
 # Estrutura de tarefas por dia
 TAREFAS_POR_DIA = {
     1: [
-        {"condominio": "Village Mananciais", "tipo": "Transferência", "descricao": "Transfer CX Presidente Fátima - Recarga Interfones", "valor": 100.00},
-        {"condominio": "Colina Verde", "tipo": "Boleto", "descricao": "Iguá - Débito em conta", "valor": None}
+        {
+            "condominio": "Village Mananciais", 
+            "tipo": "Transferência", 
+            "descricao": "Transfer CX Presidente Fátima - Recarga Interfones",
+            "destinatario": "Fátima (Presidente)",
+            "valor": 100.00
+        },
+        {
+            "condominio": "Colina Verde", 
+            "tipo": "Boleto", 
+            "descricao": "Iguá - Débito em conta automático",
+            "destinatario": "Conta Santander Ag. 3894",
+            "valor": None
+        }
     ],
     5: [
         {"condominio": "Village Tucanos", "tipo": "Pagamento", "descricao": "Salários dos Funcionários (Bruno e Gustavo)", "valor": 3850.00},
@@ -419,13 +442,29 @@ if (mes_hoje == st.session_state.mes_atual and
         
         with col1:
             classe = "tarefa-concluida" if concluida else "tarefa-urgente"
-            valor_str = f"💰 R$ {tarefa['valor']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if tarefa.get('valor') else ""
+            
+            # Ícone por tipo
+            icones = {
+                "Boleto": "📄",
+                "PIX": "💸",
+                "Transferência": "💰",
+                "Pagamento": "💵",
+                "Impostos": "🏛️",
+                "Vale": "🎫"
+            }
+            icone = icones.get(tarefa['tipo'], "📋")
+            
+            valor_str = f"<br><small style='color: #2e7d32; font-weight: bold;'>💰 R$ {tarefa['valor']:,.2f}</small>".replace(",", "X").replace(".", ",").replace("X", ".") if tarefa.get('valor') else ""
+            
+            destinatario_str = f"<br><small style='color: #666;'>👤 {tarefa.get('destinatario', '')}</small>" if tarefa.get('destinatario') else ""
             
             st.markdown(f"""
             <div class="tarefa-card {classe}">
-                <span class="cond-badge">{tarefa['condominio']}</span>
-                <strong>{tarefa['tipo']}:</strong> {tarefa['descricao']}
-                {f'<br><small>{valor_str}</small>' if valor_str else ''}
+                <span class="cond-badge">{tarefa['condominio']}</span><br>
+                <strong style='color: #1a2942;'>{icone} {tarefa['tipo']}:</strong> 
+                <span style='color: #333;'>{tarefa['descricao']}</span>
+                {destinatario_str}
+                {valor_str}
             </div>
             """, unsafe_allow_html=True)
         
@@ -481,13 +520,29 @@ def exibir_tarefas_periodo(dias, tab):
                     
                     with col1:
                         classe = "tarefa-concluida" if concluida else "tarefa-card"
-                        valor_str = f"💰 R$ {tarefa['valor']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if tarefa.get('valor') else ""
+                        
+                        # Ícone por tipo
+                        icones = {
+                            "Boleto": "📄",
+                            "PIX": "💸",
+                            "Transferência": "💰",
+                            "Pagamento": "💵",
+                            "Impostos": "🏛️",
+                            "Vale": "🎫"
+                        }
+                        icone = icones.get(tarefa['tipo'], "📋")
+                        
+                        valor_str = f"<br><small style='color: #2e7d32; font-weight: bold;'>💰 R$ {tarefa['valor']:,.2f}</small>".replace(",", "X").replace(".", ",").replace("X", ".") if tarefa.get('valor') else ""
+                        
+                        destinatario_str = f"<br><small style='color: #666;'>👤 {tarefa.get('destinatario', '')}</small>" if tarefa.get('destinatario') else ""
                         
                         st.markdown(f"""
                         <div class="tarefa-card {classe}">
-                            <span class="cond-badge">{tarefa['condominio']}</span>
-                            <strong>{tarefa['tipo']}:</strong> {tarefa['descricao']}
-                            {f'<br><small>{valor_str}</small>' if valor_str else ''}
+                            <span class="cond-badge">{tarefa['condominio']}</span><br>
+                            <strong style='color: #1a2942;'>{icone} {tarefa['tipo']}:</strong> 
+                            <span style='color: #333;'>{tarefa['descricao']}</span>
+                            {destinatario_str}
+                            {valor_str}
                         </div>
                         """, unsafe_allow_html=True)
                     
