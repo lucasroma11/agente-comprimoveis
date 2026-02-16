@@ -53,9 +53,11 @@ st.markdown("""
     }
     
     .main-header p {
-        margin: 0.5rem 0 0 0;
-        font-size: 1.1rem;
-        opacity: 0.95;
+        .main-header img {
+        background: white;
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     
     /* Cards de Tarefas */
@@ -258,18 +260,21 @@ CONDOMINIOS = [
 ]
 
 # ============================================================================
-# HEADER PRINCIPAL
+# HEADER PRINCIPAL COM LOGO
 # ============================================================================
 
-st.markdown("""
+# Carrega a logo do GitHub
+logo_url = "https://raw.githubusercontent.com/lucasroma11/agente-comprimoveis/main/llogo-comprimoveis-1.png"
+
+st.markdown(f"""
 <div class="main-header">
+    <img src="{logo_url}" alt="Comprimóveis" style="max-width: 200px; margin-bottom: 1rem;">
     <h1>🏢 Calendário BPO - Comprimóveis</h1>
     <p>Consultoria & Administração</p>
     <p style="font-size: 1rem; margin-top: 0.5rem;">"A chave do seu sonho está aqui"</p>
     <p style="font-size: 0.9rem; margin-top: 1rem; opacity: 0.8;">CRECI: 37215 | Sistema de Gerenciamento para Vanessa</p>
 </div>
 """, unsafe_allow_html=True)
-
 # ============================================================================
 # INICIALIZAÇÃO DO ESTADO
 # ============================================================================
