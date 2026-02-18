@@ -1,6 +1,6 @@
 """
 MAIN - Interface Streamlit do Agente Comprimoveis
-Design Premium - inspirado no Calendario BPO Comprimoveis v2.0
+Design Premium v2.1 — com botão de conclusão de tarefa e contexto de conversa
 """
 
 import asyncio
@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import streamlit as st
 from app.services.ai_router import processar_mensagem
-from app.services.gemini_service import listar_tarefas, listar_pendentes
+from app.services.gemini_service import listar_tarefas, listar_pendentes, marcar_concluida
 from app.core.database import criar_tabelas, popular_condominios, SessionLocal
 
 # ============================================================
@@ -27,7 +27,7 @@ st.set_page_config(
 )
 
 # ============================================================
-# CSS PREMIUM
+# CSS PREMIUM v2.1
 # ============================================================
 
 st.markdown("""
@@ -71,9 +71,7 @@ st.markdown("""
 .main-header::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 0; left: 0; right: 0;
     height: 3px;
     background: linear-gradient(90deg, transparent 0%, #ff6b35 50%, transparent 100%);
     animation: shimmer 3s ease-in-out infinite;
@@ -81,15 +79,13 @@ st.markdown("""
 
 @keyframes shimmer {
     0%, 100% { opacity: 0.5; }
-    50% { opacity: 1; }
+    50%       { opacity: 1; }
 }
 
 .main-header::after {
     content: '';
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: 0; left: 0; right: 0;
     height: 1px;
     background: linear-gradient(90deg, transparent, rgba(255,107,53,0.4), transparent);
 }
@@ -161,7 +157,7 @@ st.markdown("""
 
 .stat-card:hover {
     transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 20px 50px rgba(255, 107, 53, 0.2);
+    box-shadow: 0 20px 50px rgba(255,107,53,0.2);
 }
 
 @keyframes scaleIn {
@@ -169,11 +165,7 @@ st.markdown("""
     to   { opacity: 1; transform: scale(1); }
 }
 
-.stat-icon {
-    font-size: 1.8rem;
-    margin-bottom: 0.3rem;
-    display: block;
-}
+.stat-icon  { font-size: 1.8rem; margin-bottom: 0.3rem; display: block; }
 
 .stat-number {
     font-size: 3rem;
@@ -199,7 +191,7 @@ st.markdown("""
 }
 
 /* ========== CHAT SECTION ========== */
-.chat-section-title {
+.chat-section-title, .tarefas-section-title {
     font-size: 1.2rem;
     font-weight: 700;
     color: var(--azul-comprimoveis);
@@ -253,6 +245,7 @@ st.markdown("""
     border: 1px solid rgba(61,90,128,0.1);
     font-size: 0.92rem;
     line-height: 1.5;
+    white-space: pre-wrap;
     animation: msgIn 0.3s ease;
 }
 
@@ -267,7 +260,7 @@ st.markdown("""
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ========== INPUT E BOTÃO ========== */
+/* ========== INPUT E BOTÃO ENVIAR ========== */
 .stTextInput > div > div > input {
     border-radius: 12px !important;
     border: 2px solid rgba(61,90,128,0.2) !important;
@@ -282,7 +275,8 @@ st.markdown("""
     box-shadow: 0 0 0 3px rgba(255,107,53,0.15) !important;
 }
 
-.stButton > button {
+/* Botão Enviar (submit do form) */
+[data-testid="stFormSubmitButton"] > button {
     background: linear-gradient(135deg, var(--laranja-comprimoveis) 0%, #ff8c61 100%) !important;
     color: white !important;
     border: none !important;
@@ -293,37 +287,41 @@ st.markdown("""
     letter-spacing: 0.02em !important;
     box-shadow: 0 6px 20px rgba(255,107,53,0.35) !important;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    position: relative;
-    overflow: hidden;
 }
 
-.stButton > button:hover {
+[data-testid="stFormSubmitButton"] > button:hover {
     transform: translateY(-3px) scale(1.02) !important;
     box-shadow: 0 10px 30px rgba(255,107,53,0.45) !important;
 }
 
-.stButton > button:active {
-    transform: translateY(-1px) scale(0.99) !important;
+/* Botão Concluir tarefa (st.button fora do form) */
+[data-testid="stBaseButton-secondary"],
+.stButton > button {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 0.4rem 0.5rem !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    box-shadow: 0 3px 12px rgba(16,185,129,0.3) !important;
+    transition: all 0.25s ease !important;
+    width: 100% !important;
+}
+
+.stButton > button:hover {
+    transform: scale(1.06) !important;
+    box-shadow: 0 6px 18px rgba(16,185,129,0.45) !important;
 }
 
 /* ========== TASK CARDS PREMIUM ========== */
-.tarefas-section-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--azul-comprimoveis);
-    margin-bottom: 1rem;
-    padding-bottom: 0.6rem;
-    border-bottom: 2px solid rgba(255,107,53,0.2);
-    letter-spacing: -0.01em;
-}
-
 .tarefa-card {
     background: white;
     border-left: 5px solid var(--laranja-comprimoveis);
-    padding: 1.1rem 1.3rem;
-    margin: 0.7rem 0;
-    border-radius: 16px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+    padding: 0.9rem 1.1rem;
+    margin: 0;
+    border-radius: 14px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.06);
     color: #1a2942 !important;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
@@ -336,66 +334,63 @@ st.markdown("""
     left: 0; top: 0; bottom: 0;
     width: 5px;
     background: linear-gradient(180deg, var(--laranja-comprimoveis), #ff8c61);
-    border-radius: 0 0 0 16px;
 }
 
 .tarefa-card:hover {
-    transform: translateX(4px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    transform: translateX(3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
 }
 
-.tarefa-card strong {
-    color: #1a2942 !important;
-    font-weight: 600;
-    font-size: 0.92rem;
-}
-
-.tarefa-card small {
-    color: #64748b !important;
-    font-size: 0.8rem;
-}
-
-.tarefa-card .tarefa-badge {
-    display: inline-block;
-    background: rgba(61,90,128,0.1);
-    color: #3d5a80;
-    padding: 0.15rem 0.6rem;
-    border-radius: 20px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-top: 0.4rem;
-}
+.tarefa-card strong { color: #1a2942 !important; font-weight: 600; font-size: 0.88rem; }
+.tarefa-card small  { color: #64748b !important; font-size: 0.77rem; }
 
 .tarefa-concluida {
     background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
     border-left-color: var(--verde-sucesso) !important;
     opacity: 0.92;
     color: #065f46 !important;
+    padding: 0.9rem 1.1rem;
+    margin: 0.5rem 0;
+    border-radius: 14px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.05);
+    position: relative;
+    overflow: hidden;
 }
 
 .tarefa-concluida::before {
-    background: linear-gradient(180deg, #10b981, #34d399) !important;
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 5px;
+    background: linear-gradient(180deg, #10b981, #34d399);
 }
 
-.tarefa-concluida strong { color: #065f46 !important; }
-.tarefa-concluida small  { color: #6ee7b7 !important; }
+.tarefa-concluida strong { color: #065f46 !important; font-size: 0.88rem; }
+.tarefa-concluida small  { color: #6ee7b7 !important; font-size: 0.77rem; }
 
 .tarefa-urgente {
     background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-    border-left-color: var(--vermelho-urgente) !important;
+    border-left: 5px solid var(--vermelho-urgente) !important;
     color: #991b1b !important;
     animation: urgentPulse 2.5s ease-in-out infinite;
+    padding: 0.9rem 1.1rem;
+    border-radius: 14px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+    position: relative;
+    overflow: hidden;
 }
 
 .tarefa-urgente::before {
-    background: linear-gradient(180deg, #ef4444, #f87171) !important;
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 5px;
+    background: linear-gradient(180deg, #ef4444, #f87171);
 }
 
 @keyframes urgentPulse {
-    0%, 100% { box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
-    50%       { box-shadow: 0 4px 15px rgba(239,68,68,0.25), 0 0 0 3px rgba(239,68,68,0.08); }
+    0%, 100% { box-shadow: 0 3px 12px rgba(0,0,0,0.06); }
+    50%       { box-shadow: 0 3px 12px rgba(239,68,68,0.25), 0 0 0 3px rgba(239,68,68,0.08); }
 }
 
 /* ========== SECTION BOX ========== */
@@ -409,22 +404,13 @@ st.markdown("""
     box-shadow: 0 8px 32px rgba(0,0,0,0.06);
 }
 
-/* ========== EMPTY STATE ========== */
-.empty-state {
-    text-align: center;
-    padding: 2.5rem 1rem;
-    color: #94a3b8;
-}
+/* Separador entre card e botão */
+.tarefa-row-sep { margin-bottom: 0.65rem; }
 
+/* ========== EMPTY STATE ========== */
+.empty-state { text-align: center; padding: 2.5rem 1rem; color: #94a3b8; }
 .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 0.8rem; display: block; }
 .empty-state p { font-size: 0.9rem; margin: 0; }
-
-/* ========== INFO BOX ========== */
-.stInfo {
-    border-radius: 12px !important;
-    background: rgba(61,90,128,0.08) !important;
-    border: 1px solid rgba(61,90,128,0.2) !important;
-}
 
 /* ========== RODAPÉ ========== */
 .footer-premium {
@@ -434,25 +420,20 @@ st.markdown("""
     font-size: 0.82rem;
     letter-spacing: 0.02em;
 }
-
 .footer-premium strong { color: #64748b; }
 
 /* ========== SPINNER ========== */
 .stSpinner > div { border-color: var(--laranja-comprimoveis) transparent transparent transparent !important; }
 
-/* ========== FORM ========== */
-.stForm {
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-}
+/* ========== FORM (remove borda padrão Streamlit) ========== */
+.stForm { background: transparent !important; border: none !important; padding: 0 !important; }
 
 /* ========== RESPONSIVO ========== */
 @media (max-width: 768px) {
-    .main-header h1 { font-size: 1.6rem; }
-    .stat-number    { font-size: 2.2rem; }
-    .chat-msg-user  { margin-left: 8%; }
-    .chat-msg-agente { margin-right: 8%; }
+    .main-header h1   { font-size: 1.6rem; }
+    .stat-number      { font-size: 2.2rem; }
+    .chat-msg-user    { margin-left: 8%; }
+    .chat-msg-agente  { margin-right: 8%; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -485,18 +466,18 @@ st.markdown("""
 
 
 # ============================================================
-# STATS
+# STATS (recarregadas a cada interação via rerun)
 # ============================================================
 
 db = SessionLocal()
 hoje = datetime.now()
-tarefas_pendentes = listar_pendentes(db, mes=hoje.month, ano=hoje.year)
+tarefas_pendentes_lista = listar_pendentes(db, mes=hoje.month, ano=hoje.year)
 tarefas_todas = listar_tarefas(db, mes=hoje.month, ano=hoje.year)
 db.close()
 
-total_pendentes = len(tarefas_pendentes)
+total_pendentes  = len(tarefas_pendentes_lista)
 total_concluidas = len([t for t in tarefas_todas if t['status'] == 'concluida'])
-total_urgentes = len([t for t in tarefas_pendentes if t['urgente']])
+total_urgentes   = len([t for t in tarefas_pendentes_lista if t['urgente']])
 
 col1, col2, col3 = st.columns(3)
 
@@ -547,7 +528,7 @@ with col_chat:
         unsafe_allow_html=True
     )
 
-    # Inicializa histórico
+    # Inicializa histórico de exibição no chat
     if "historico_chat" not in st.session_state:
         st.session_state.historico_chat = [
             {
@@ -583,8 +564,13 @@ with col_chat:
             "texto": user_input
         })
 
+        # Passa as últimas 10 mensagens como contexto para o agente
+        historico_contexto = st.session_state.historico_chat[-10:]
+
         with st.spinner("Processando..."):
-            resultado = asyncio.run(processar_mensagem(user_input))
+            resultado = asyncio.run(
+                processar_mensagem(user_input, historico=historico_contexto)
+            )
 
         st.session_state.historico_chat.append({
             "role": "agente",
@@ -607,39 +593,66 @@ with col_tarefas:
         </div>
         """, unsafe_allow_html=True)
     else:
-        # Pendentes
+        # ── PENDENTES com botão de conclusão ──
         pendentes = [t for t in tarefas_todas if t['status'] == 'pendente']
         if pendentes:
             st.markdown(
-                "<p style='font-size:0.8rem;font-weight:700;color:#64748b;"
-                "text-transform:uppercase;letter-spacing:0.08em;margin:0.5rem 0;'>Pendentes</p>",
+                "<p style='font-size:0.78rem;font-weight:700;color:#64748b;"
+                "text-transform:uppercase;letter-spacing:0.08em;margin:0.4rem 0 0.6rem 0;'>"
+                "Pendentes</p>",
                 unsafe_allow_html=True
             )
             for t in pendentes:
-                classe = "tarefa-urgente" if t['urgente'] else "tarefa-card"
-                dia = f"📅 Dia {t['dia']}  " if t['dia'] else ""
-                urgente_tag = " 🚨 <em>URGENTE</em>" if t['urgente'] else ""
-                st.markdown(f"""
-                <div class="{classe}">
-                    <strong>[{t['id']}] {t['titulo']}{urgente_tag}</strong><br>
-                    <small>{dia}🏢 {t['condominio']} · {t['categoria']}</small>
-                </div>
-                """, unsafe_allow_html=True)
+                classe   = "tarefa-urgente" if t['urgente'] else "tarefa-card"
+                dia_str  = f"📅 Dia {t['dia']}  " if t['dia'] else ""
+                urg_tag  = " 🚨 <em>URGENTE</em>" if t['urgente'] else ""
 
-        # Concluídas
+                # Layout: card (5 partes) + botão conclusão (1 parte)
+                c_card, c_btn = st.columns([5, 1])
+
+                with c_card:
+                    st.markdown(f"""
+                    <div class="{classe}">
+                        <strong>[{t['id']}] {t['titulo']}{urg_tag}</strong><br>
+                        <small>{dia_str}🏢 {t['condominio']} · {t['categoria']}</small>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                with c_btn:
+                    # Alinha verticalmente com o card
+                    st.markdown("<div style='padding-top:0.35rem'>", unsafe_allow_html=True)
+                    if st.button(
+                        "✅",
+                        key=f"concluir_{t['id']}",
+                        help=f"Marcar '{t['titulo']}' como concluída",
+                        use_container_width=True
+                    ):
+                        db_c = SessionLocal()
+                        res = marcar_concluida(db_c, t['id'])
+                        db_c.close()
+                        if res.get("sucesso"):
+                            st.toast(f"✅ '{res['titulo']}' concluída!", icon="✅")
+                        st.rerun()
+                    st.markdown("</div>", unsafe_allow_html=True)
+
+                # Espaçamento entre cards
+                st.markdown("<div class='tarefa-row-sep'></div>", unsafe_allow_html=True)
+
+        # ── CONCLUÍDAS ──
         concluidas = [t for t in tarefas_todas if t['status'] == 'concluida']
         if concluidas:
             st.markdown(
-                "<p style='font-size:0.8rem;font-weight:700;color:#64748b;"
-                "text-transform:uppercase;letter-spacing:0.08em;margin:1rem 0 0.5rem 0;'>Concluídas</p>",
+                "<p style='font-size:0.78rem;font-weight:700;color:#64748b;"
+                "text-transform:uppercase;letter-spacing:0.08em;margin:1rem 0 0.6rem 0;'>"
+                "Concluídas</p>",
                 unsafe_allow_html=True
             )
             for t in concluidas:
-                dia = f"📅 Dia {t['dia']}  " if t['dia'] else ""
+                dia_str = f"📅 Dia {t['dia']}  " if t['dia'] else ""
                 st.markdown(f"""
-                <div class="tarefa-concluida tarefa-card">
+                <div class="tarefa-concluida">
                     <strong>✅ {t['titulo']}</strong><br>
-                    <small>{dia}🏢 {t['condominio']}</small>
+                    <small>{dia_str}🏢 {t['condominio']}</small>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -654,6 +667,6 @@ st.markdown("<br>", unsafe_allow_html=True)
 st.markdown(f"""
 <div class="footer-premium">
     <strong>Comprimóveis</strong> · Consultoria &amp; Administração de Condomínios<br>
-    Agente v1.0 · Powered by Gemini AI · {hoje.strftime('%B %Y')}
+    Agente v2.0 · Powered by Gemini AI · {hoje.strftime('%B %Y')}
 </div>
 """, unsafe_allow_html=True)

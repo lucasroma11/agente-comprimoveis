@@ -1,0 +1,112 @@
+================================================================
+  AGENTE COMPRIMÓVEIS — SETUP SYSTEMD NA AWS EC2
+  Servidor: ubuntu@54.242.191.173
+================================================================
+
+COMO CONECTAR VIA SSH
+----------------------
+Abra o PowerShell ou Terminal e rode:
+
+  ssh -i "C:\Users\lucas\.ssh\comprimoveis-beta.pem" ubuntu@54.242.191.173
+
+Obs: se der erro de permissão na chave .pem, rode antes:
+  icacls "C:\Users\lucas\.ssh\comprimoveis-beta.pem" /inheritance:r /grant:r "%USERNAME%:R"
+
+
+================================================================
+  PASSO 1 — CRIAR O ARQUIVO DE SERVIÇO SYSTEMD
+================================================================
+
+Cole este bloco inteiro no terminal SSH (cria o arquivo direto, sem abrir editor):
+
+sudo tee /etc/systemd/system/agente-comprimoveis.service > /dev/null << 'EOF'
+[Unit]
+Description=Agente Comprimoveis Streamlit
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/agente-comprimoveis
+Environment="PATH=/home/ubuntu/agente-comprimoveis/venv/bin"
+EnvironmentFile=/home/ubuntu/agente-comprimoveis/.env
+ExecStart=/home/ubuntu/agente-comprimoveis/venv/bin/streamlit run app/main.py --server.port 8501 --server.address 0.0.0.0
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+Verifique se ficou correto:
+  cat /etc/systemd/system/agente-comprimoveis.service
+
+
+================================================================
+  PASSO 2 — ATIVAR E INICIAR O SERVIÇO
+================================================================
+
+Execute estes comandos em ordem:
+
+  sudo systemctl daemon-reload
+  sudo systemctl enable agente-comprimoveis
+  sudo systemctl start agente-comprimoveis
+  sudo systemctl status agente-comprimoveis
+
+Resultado esperado no status:
+  ● agente-comprimoveis.service - Agente Comprimoveis Streamlit
+       Active: active (running) since ...
+
+
+================================================================
+  PASSO 3 — ATUALIZAR A API KEY DO GEMINI NO SERVIDOR
+================================================================
+
+A API Key foi trocada. Atualize o .env no servidor:
+
+  nano /home/ubuntu/agente-comprimoveis/.env
+
+Certifique-se que a linha está assim:
+  GEMINI_API_KEY=AIzaSyB4tJdQadPWHvPk5WoRE6FggeQKE9vfJbM
+
+Salvar: Ctrl+X → Y → Enter
+
+Após salvar, reinicie o serviço para recarregar a variável:
+  sudo systemctl restart agente-comprimoveis
+
+
+================================================================
+  COMANDOS ÚTEIS PARA O DIA A DIA
+================================================================
+
+Ver logs em tempo real (Ctrl+C para sair):
+  sudo journalctl -u agente-comprimoveis -f
+
+Ver últimas 50 linhas de log:
+  sudo journalctl -u agente-comprimoveis -n 50
+
+Reiniciar após atualizar o código (git pull + restart):
+  cd /home/ubuntu/agente-comprimoveis && git pull && sudo systemctl restart agente-comprimoveis
+
+Parar o serviço:
+  sudo systemctl stop agente-comprimoveis
+
+Desativar o serviço (não inicia mais no boot):
+  sudo systemctl disable agente-comprimoveis
+
+Verificar se a porta 8501 está aberta:
+  sudo ss -tlnp | grep 8501
+
+
+================================================================
+  CHECKLIST PÓS-SETUP
+================================================================
+
+[ ] SSH funcionando: ssh -i comprimoveis-beta.pem ubuntu@54.242.191.173
+[ ] Arquivo de serviço criado: cat /etc/systemd/system/agente-comprimoveis.service
+[ ] Serviço ativo: sudo systemctl status agente-comprimoveis
+[ ] API Key nova no .env do servidor
+[ ] Site respondendo: http://54.242.191.173:8501
+[ ] Testar mensagem no chat para confirmar API Key nova funciona
+
+================================================================
