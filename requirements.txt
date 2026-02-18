@@ -2,7 +2,6 @@
 streamlit==1.54.0
 
 # IA
-google-generativeai==0.8.6
 google-genai==1.63.0
 
 # Backend
