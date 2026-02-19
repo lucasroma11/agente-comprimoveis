@@ -113,7 +113,7 @@ PALAVRAS_AUTOMACAO = [
 
 def classificar_intencao(mensagem: str) -> str:
     """Classifica a intenção da mensagem.
-    Ordem importa: condominios ANTES de listar para evitar falso-positivo em 'quais'.
+    Verifica combinações específicas antes de palavras genéricas.
     """
     msg = mensagem.lower()
 
@@ -122,8 +122,12 @@ def classificar_intencao(mensagem: str) -> str:
         if p in msg:
             return "automacao"
     
-    # CONDOMÍNIOS (verifica combinações primeiro)
-    if any(palavra in msg for palavra in ["condominio", "condominios", "prédio", "prédios"]):
+    # CONDOMÍNIOS (verifica se tem "condominio" OU "prédio" na mensagem)
+    if "condominio" in msg or "condominios" in msg or "predio" in msg or "prédio" in msg or "prédios" in msg:
+        # Se tem essas palavras + pergunta (quais, lista, ver, mostrar) = quer listar condomínios
+        if any(p in msg for p in ["quais", "lista", "listar", "mostrar", "ver", "quantos", "quem"]):
+            return "condominios"
+        # Se só tem "condomínios" mas sem verbo de listagem, pode ser conversa
         return "condominios"
     
     # CRIAR
@@ -141,13 +145,12 @@ def classificar_intencao(mensagem: str) -> str:
         if p in msg:
             return "analisar"
     
-    # LISTAR
+    # LISTAR (só chega aqui se NÃO tem "condomínio" na mensagem)
     for p in PALAVRAS_LISTAR:
         if p in msg:
             return "listar"
 
     return "conversa"
-
 
 # ============================================================
 # CONSTRUTOR DE PROMPT DINÂMICO
