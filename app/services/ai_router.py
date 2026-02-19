@@ -1,5 +1,6 @@
 """
-AI ROUTER v2 - Roteador Inteligente com Prompts Dinâmicos e Contexto
+AI ROUTER v2.1 - Roteador Inteligente com Prompts Dinâmicos e Contexto
+FIX: Client Gemini com inicialização lazy para evitar api_key=None no import
 """
 
 import os
@@ -16,8 +17,48 @@ from app.services.gemini_service import (
     listar_condominios
 )
 
-load_dotenv()
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+# ============================================================
+# CLIENTE GEMINI — INICIALIZAÇÃO LAZY (FIX DO BUG)
+# ============================================================
+# PROBLEMA: client = genai.Client(api_key=os.getenv(...)) no nível do módulo
+# cria o client no momento do `import`, antes do .env estar carregado.
+# Se GEMINI_API_KEY for None nesse momento, o SDK usa ADC (Application Default
+# Credentials) que pode estar vencido → erro "API key expired".
+#
+# SOLUÇÃO: inicializar o client apenas quando a API for chamada de fato,
+# garantindo que load_dotenv() já rodou.
+
+_client_cache: genai.Client | None = None
+
+
+def _get_client() -> genai.Client:
+    """
+    Retorna o cliente Gemini (singleton por processo).
+    Cria o client na primeira chamada — lazy — evitando o problema de
+    módulo importado antes do .env estar disponível.
+    """
+    global _client_cache
+
+    if _client_cache is not None:
+        return _client_cache
+
+    # Garante que .env está carregado (idempotente — sem efeito se já estiver)
+    load_dotenv()
+
+    api_key = os.getenv("GEMINI_API_KEY")
+
+    if not api_key:
+        raise EnvironmentError(
+            "GEMINI_API_KEY não encontrada. "
+            "Verifique se o arquivo .env existe e contém GEMINI_API_KEY=..."
+        )
+
+    # Log parcial da chave para confirmar qual está sendo usada
+    logger.info(f"Inicializando cliente Gemini (key: ...{api_key[-6:]})")
+
+    _client_cache = genai.Client(api_key=api_key)
+    return _client_cache
 
 
 # ============================================================
@@ -31,7 +72,8 @@ PALAVRAS_CONDOMINIOS = [
 ]
 
 PALAVRAS_CRIAR = [
-    "adiciona", "adicionar", "cria", "criar",
+    "adiciona", "adicionar", "adicione",
+    "cria", "criar", "crie",
     "nova tarefa", "novo boleto", "cadastra",
     "coloca", "insere", "anota",
 ]
@@ -105,35 +147,39 @@ def construir_prompt_sistema(
     historico: list = None
 ) -> str:
     """Monta o system prompt com dados reais do banco em tempo real."""
-    nomes_condominios = ", ".join([c["nome"] for c in condominios]) if condominios else "nenhum cadastrado"
+    nomes_condominios = (
+        ", ".join([c["nome"] for c in condominios])
+        if condominios else "nenhum cadastrado"
+    )
 
     status_pendentes = ""
     if n_pendentes > 0:
-        urgencia = f" ({n_urgentes} URGENTE{'S' if n_urgentes > 1 else ''})" if n_urgentes > 0 else ""
-        status_pendentes = f"\nPendências este mês: {n_pendentes} tarefa(s){urgencia}."
+        urgencia = (
+            f" ({n_urgentes} URGENTE{'S' if n_urgentes > 1 else ''})"
+            if n_urgentes > 0 else ""
+        )
+        status_pendentes = f"\nPendencias este mes: {n_pendentes} tarefa(s){urgencia}."
 
     contexto_historico = ""
     if historico:
         pares = []
-        for item in historico[-6:]:  # últimas 6 mensagens
+        for item in historico[-6:]:
             role = "Vanessa" if item.get("role") == "user" else "Assistente"
             pares.append(f"{role}: {item.get('content', '')}")
         if pares:
             contexto_historico = "\n\nContexto da conversa:\n" + "\n".join(pares)
 
-    prompt = f"""Você é o assistente da Comprimóveis, empresa de administração de condomínios no RJ.
-Você ajuda Vanessa com tarefas, pagamentos e calendário de vencimentos.
-
-Condomínios ativos no sistema: {nomes_condominios}{status_pendentes}{contexto_historico}
-
-Regras:
-- Responda SEMPRE em português do Brasil
-- Seja objetivo, amigável e use emojis quando adequado
-- Ao listar tarefas, use o formato: [ID] Dia XX - Título (Condomínio)
-- Nunca invente dados — use apenas o que o sistema fornece
-- Se não souber algo, diga isso e oriente Vanessa"""
-
-    return prompt
+    return (
+        f"Voce e o assistente da Comprimoveis, empresa de administracao de condominios no RJ.\n"
+        f"Voce ajuda Vanessa com tarefas, pagamentos e calendario de vencimentos.\n\n"
+        f"Condominios ativos no sistema: {nomes_condominios}{status_pendentes}{contexto_historico}\n\n"
+        f"Regras:\n"
+        f"- Responda SEMPRE em portugues do Brasil\n"
+        f"- Seja objetivo, amigavel e use emojis quando adequado\n"
+        f"- Ao listar tarefas, use o formato: [ID] Dia XX - Titulo (Condominio)\n"
+        f"- Nunca invente dados — use apenas o que o sistema fornece\n"
+        f"- Se nao souber algo, diga isso e oriente Vanessa"
+    )
 
 
 # ============================================================
@@ -147,31 +193,31 @@ async def extrair_dados_tarefa(mensagem: str, condominios_validos: list = None) 
     lista_condominios = ""
     if condominios_validos:
         nomes = [c["nome"] for c in condominios_validos]
-        lista_condominios = f"\nCondomínios válidos: {', '.join(nomes)}"
+        lista_condominios = f"\nCondominios validos: {', '.join(nomes)}"
 
-    prompt = f"""Extraia os dados desta mensagem e retorne APENAS um JSON válido, sem explicações.
+    prompt = (
+        f'Extraia os dados desta mensagem e retorne APENAS um JSON valido, sem explicacoes.\n\n'
+        f'Mensagem: "{mensagem}"\n'
+        f'{lista_condominios}\n\n'
+        f'Retorne exatamente neste formato:\n'
+        f'{{\n'
+        f'    "titulo": "titulo resumido da tarefa",\n'
+        f'    "condominio": "nome exato do condominio ou null",\n'
+        f'    "dia": numero do dia ou null,\n'
+        f'    "mes": {hoje.month},\n'
+        f'    "ano": {hoje.year},\n'
+        f'    "urgente": false,\n'
+        f'    "categoria": "pagamento ou geral"\n'
+        f'}}\n\n'
+        f'Regras:\n'
+        f'- "boleto", "conta", "fatura", "pagar" -> categoria: "pagamento"\n'
+        f'- "reuniao", "vistoria", "ligar", "enviar" -> categoria: "geral"\n'
+        f'- "URGENTE" ou "urgente" na mensagem -> urgente: true\n'
+        f'- Se o condominio nao estiver na lista valida, retorne null\n'
+        f'- O titulo deve ser curto e descritivo (ex: "Boleto Light", "Reuniao sindico")'
+    )
 
-Mensagem: "{mensagem}"
-{lista_condominios}
-
-Retorne exatamente neste formato:
-{{
-    "titulo": "título resumido da tarefa",
-    "condominio": "nome exato do condomínio ou null",
-    "dia": número do dia ou null,
-    "mes": {hoje.month},
-    "ano": {hoje.year},
-    "urgente": false,
-    "categoria": "pagamento ou geral"
-}}
-
-Regras:
-- "boleto", "conta", "fatura", "pagar" → categoria: "pagamento"
-- "reunião", "vistoria", "ligar", "enviar" → categoria: "geral"
-- "URGENTE" ou "urgente" na mensagem → urgente: true
-- Se o condomínio não estiver na lista válida, retorne null
-- O título deve ser curto e descritivo (ex: "Boleto Light", "Reunião síndico")"""
-
+    client = _get_client()
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         contents=prompt
@@ -182,7 +228,6 @@ Regras:
         texto = texto.replace("```json", "").replace("```", "").strip()
         dados = json.loads(texto)
 
-        # Garante que mes e ano nunca vêm null
         if not dados.get("mes"):
             dados["mes"] = hoje.month
         if not dados.get("ano"):
@@ -225,17 +270,18 @@ async def extrair_id_tarefa(mensagem: str, tarefas: list, historico: list = None
         if pares:
             contexto = "\nContexto recente:\n" + "\n".join(pares)
 
-    prompt = f"""Vanessa disse: "{mensagem}"
-{contexto}
+    prompt = (
+        f'Vanessa disse: "{mensagem}"\n'
+        f'{contexto}\n\n'
+        f'Tarefas pendentes disponiveis:\n'
+        f'{lista}\n\n'
+        f'Qual o ID da tarefa que Vanessa quer marcar como concluida?\n'
+        f'Analise o contexto da conversa para entender a qual tarefa ela se refere.\n'
+        f'Retorne APENAS o numero do ID, sem explicacoes.\n'
+        f'Se nao for possivel identificar com certeza, retorne: null'
+    )
 
-Tarefas pendentes disponíveis:
-{lista}
-
-Qual o ID da tarefa que Vanessa quer marcar como concluída?
-Analise o contexto da conversa para entender a qual tarefa ela se refere.
-Retorne APENAS o número do ID, sem explicações.
-Se não for possível identificar com certeza, retorne: null"""
-
+    client = _get_client()
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         contents=prompt
@@ -265,12 +311,12 @@ async def processar_mensagem(mensagem: str, historico: list = None) -> dict:
         historico = []
 
     intencao = classificar_intencao(mensagem)
-    logger.info(f"Mensagem: '{mensagem[:60]}' → intenção: {intencao}")
+    logger.info(f"Mensagem: '{mensagem[:60]}' -> intencao: {intencao}")
 
     db = SessionLocal()
 
     try:
-        # Carrega dados do banco uma única vez para usar em todo o processamento
+        # Carrega dados do banco uma única vez
         condominios = listar_condominios(db)
         tarefas_mes = listar_pendentes(db, mes=hoje.month, ano=hoje.year)
         n_pendentes = len(tarefas_mes)
@@ -286,24 +332,20 @@ async def processar_mensagem(mensagem: str, historico: list = None) -> dict:
 
         # ── LISTAR CONDOMÍNIOS ──
         if intencao == "condominios":
-            logger.info("Ação: LISTAR condomínios")
+            logger.info("Acao: LISTAR condominios")
             if not condominios:
-                resposta = "Nenhum condomínio cadastrado no sistema ainda."
+                resposta = "Nenhum condominio cadastrado no sistema ainda."
             else:
-                linhas = [f"🏢 Condomínios ativos ({len(condominios)}):"]
+                linhas = [f"Condominios ativos ({len(condominios)}):"]
                 for i, c in enumerate(condominios, 1):
                     linhas.append(f"  {i}. {c['nome']}")
                 resposta = "\n".join(linhas)
 
-            return {
-                "resposta": resposta,
-                "acao": "condominios",
-                "dados": condominios
-            }
+            return {"resposta": resposta, "acao": "condominios", "dados": condominios}
 
         # ── CRIAR TAREFA ──
         elif intencao == "criar":
-            logger.info("Ação: CRIAR tarefa")
+            logger.info("Acao: CRIAR tarefa")
             dados = await extrair_dados_tarefa(mensagem, condominios_validos=condominios)
 
             resultado = criar_tarefa(
@@ -318,144 +360,131 @@ async def processar_mensagem(mensagem: str, historico: list = None) -> dict:
             )
 
             if resultado["sucesso"]:
-                cond = f" — {dados.get('condominio')}" if dados.get("condominio") else ""
+                cond = f" - {dados.get('condominio')}" if dados.get("condominio") else ""
                 dia = f" para o dia {dados.get('dia')}" if dados.get("dia") else ""
-                urgente_txt = " ⚠️ URGENTE" if dados.get("urgente") else ""
-                resposta = f"✅ Tarefa criada!{urgente_txt}\n📌 '{resultado['titulo']}'{cond}{dia}"
+                urgente_txt = " URGENTE!" if dados.get("urgente") else ""
+                resposta = f"Tarefa criada!{urgente_txt}\n'{resultado['titulo']}'{cond}{dia}"
             else:
-                resposta = "❌ Não consegui criar a tarefa. Pode tentar de novo com mais detalhes?"
+                resposta = "Nao consegui criar a tarefa. Pode tentar de novo com mais detalhes?"
 
-            return {
-                "resposta": resposta,
-                "acao": "criar",
-                "dados": resultado
-            }
+            return {"resposta": resposta, "acao": "criar", "dados": resultado}
 
         # ── LISTAR TAREFAS ──
         elif intencao == "listar":
-            logger.info("Ação: LISTAR tarefas pendentes")
+            logger.info("Acao: LISTAR tarefas pendentes")
 
             if not tarefas_mes:
-                resposta = "🎉 Nenhuma tarefa pendente este mês!"
+                resposta = "Nenhuma tarefa pendente este mes!"
             else:
-                # Usa Gemini para responder de forma contextual
                 lista_txt = "\n".join([
                     f"[{t['id']}] "
                     + (f"Dia {t['dia']} - " if t.get('dia') else "")
                     + f"{t['titulo']} ({t['condominio']})"
-                    + (" ⚠️ URGENTE" if t.get("urgente") else "")
+                    + (" URGENTE!" if t.get("urgente") else "")
                     for t in tarefas_mes
                 ])
 
-                prompt_listar = f"""{system_prompt}
+                prompt_listar = (
+                    f"{system_prompt}\n\n"
+                    f'Vanessa perguntou: "{mensagem}"\n\n'
+                    f"Tarefas pendentes deste mes:\n{lista_txt}\n\n"
+                    f"Responda de forma clara e organizada. Se a pergunta for especifica "
+                    f"(ex: 'tarefas de pagamento'), filtre apenas as relevantes. "
+                    f"Caso contrario, liste todas."
+                )
 
-Vanessa perguntou: "{mensagem}"
-
-Tarefas pendentes deste mês:
-{lista_txt}
-
-Responda de forma clara e organizada. Se a pergunta for específica (ex: "tarefas de pagamento"),
-filtre apenas as relevantes. Caso contrário, liste todas."""
-
+                client = _get_client()
                 response = client.models.generate_content(
                     model="gemini-2.0-flash",
                     contents=prompt_listar
                 )
                 resposta = response.text
 
-            return {
-                "resposta": resposta,
-                "acao": "listar",
-                "dados": tarefas_mes
-            }
+            return {"resposta": resposta, "acao": "listar", "dados": tarefas_mes}
 
         # ── CONCLUIR TAREFA ──
         elif intencao == "concluir":
-            logger.info("Ação: CONCLUIR tarefa")
+            logger.info("Acao: CONCLUIR tarefa")
             tarefa_id = await extrair_id_tarefa(mensagem, tarefas_mes, historico=historico)
 
             if tarefa_id:
                 resultado = marcar_concluida(db, tarefa_id)
                 if resultado["sucesso"]:
-                    resposta = f"✅ '{resultado['titulo']}' marcada como concluída!"
+                    resposta = f"'{resultado['titulo']}' marcada como concluida!"
                 else:
-                    resposta = "⚠️ Não encontrei essa tarefa. Qual o número ou nome dela?"
+                    resposta = "Nao encontrei essa tarefa. Qual o numero ou nome dela?"
             else:
-                resposta = "❓ Qual tarefa você quer marcar como concluída?\nMe diz o número [ID] ou o nome!"
+                resposta = "Qual tarefa voce quer marcar como concluida?\nMe diz o numero [ID] ou o nome!"
 
-            return {
-                "resposta": resposta,
-                "acao": "concluir"
-            }
+            return {"resposta": resposta, "acao": "concluir"}
 
         # ── ANALISAR ──
         elif intencao == "analisar":
-            logger.info("Ação: ANALISAR pendências")
+            logger.info("Acao: ANALISAR pendencias")
 
             if not tarefas_mes:
-                return {
-                    "resposta": "🎉 Nenhuma pendência este mês! Tudo em dia.",
-                    "acao": "analisar"
-                }
+                return {"resposta": "Nenhuma pendencia este mes! Tudo em dia.", "acao": "analisar"}
 
             lista_txt = "\n".join([
                 f"- {t['titulo']} ({t['condominio']})"
                 + (f" - Dia {t['dia']}" if t.get('dia') else "")
-                + (" ⚠️ URGENTE" if t.get("urgente") else "")
+                + (" URGENTE!" if t.get("urgente") else "")
                 for t in tarefas_mes
             ])
 
-            prompt_analise = f"""{system_prompt}
+            prompt_analise = (
+                f"{system_prompt}\n\n"
+                f"Vanessa tem estas pendencias este mes:\n{lista_txt}\n\n"
+                f'Solicitacao: "{mensagem}"\n\n'
+                f"Analise as pendencias e sugira prioridades de forma objetiva. "
+                f"Agrupe por condominio quando fizer sentido. Destaque as urgentes primeiro."
+            )
 
-Vanessa tem estas pendências este mês:
-{lista_txt}
-
-Solicitação: "{mensagem}"
-
-Analise as pendências e sugira prioridades de forma objetiva.
-Agrupe por condomínio quando fizer sentido. Destaque as urgentes primeiro."""
-
+            client = _get_client()
             response = client.models.generate_content(
                 model="gemini-2.0-flash",
                 contents=prompt_analise
             )
 
-            return {
-                "resposta": response.text,
-                "acao": "analisar"
-            }
+            return {"resposta": response.text, "acao": "analisar"}
 
         # ── AUTOMAÇÃO ──
         elif intencao == "automacao":
             return {
-                "resposta": "🤖 Automação em desenvolvimento!\nEm breve o agente fará isso sozinho.",
+                "resposta": "Automacao em desenvolvimento!\nEm breve o agente fara isso sozinho.",
                 "acao": "automacao"
             }
 
         # ── CONVERSA GERAL ──
         else:
-            logger.info("Ação: CONVERSA geral")
-            prompt_conversa = f"""{system_prompt}
+            logger.info("Acao: CONVERSA geral")
+            prompt_conversa = (
+                f"{system_prompt}\n\n"
+                f"Vanessa: {mensagem}\n\n"
+                f"Responda de forma util e objetiva. Se a pergunta for sobre tarefas, "
+                f"pagamentos ou condominios, use as informacoes do sistema acima."
+            )
 
-Vanessa: {mensagem}
-
-Responda de forma útil e objetiva. Se a pergunta for sobre tarefas, pagamentos ou condomínios,
-use as informações do sistema acima."""
-
+            client = _get_client()
             response = client.models.generate_content(
                 model="gemini-2.0-flash",
                 contents=prompt_conversa
             )
 
-            return {
-                "resposta": response.text,
-                "acao": "conversa"
-            }
+            return {"resposta": response.text, "acao": "conversa"}
 
-    except Exception as e:
-        logger.error(f"Erro no processador: {e}")
+    except EnvironmentError as e:
+        # Erro de configuração — chave ausente
+        logger.error(f"Erro de configuracao: {e}")
         return {
-            "resposta": "❌ Erro ao processar. Tente novamente em instantes.",
+            "resposta": f"Erro de configuracao: {str(e)}",
+            "acao": "erro"
+        }
+    except Exception as e:
+        # Qualquer outro erro — loga com detalhes para debugging
+        logger.error(f"Erro no processador [{type(e).__name__}]: {e}")
+        return {
+            "resposta": f"Erro ao processar. Tente novamente em instantes.",
             "acao": "erro"
         }
     finally:
@@ -468,29 +497,24 @@ use as informações do sistema acima."""
 
 if __name__ == "__main__":
     testes = [
-        "Quais condomínios temos?",
-        "Quais tarefas tenho pendentes?",
-        "Adiciona boleto da Light dia 15 Village Mananciais",
-        "Adiciona reunião com síndico Colina Verde URGENTE dia 20",
-        "boleto Igua Village Tucanos 450 dia 19",
-        "Marca como pago o boleto da Light",
-        "Analisa minhas pendências e sugere prioridades",
         "Olá, tudo bem?",
+        "Quais condominios atendemos?",
+        "Adicione boleto Light Village Mananciais 450 dia 19",
+        "Quais tarefas tenho pendentes?",
+        "Analisa minhas pendencias e sugere prioridades",
     ]
 
-    print("\nTESTANDO AGENTE v2 — PROMPTS DINÂMICOS\n")
+    print("\nTESTANDO AGENTE v2.1 — LAZY CLIENT + PROMPTS DINAMICOS\n")
     print("=" * 55)
 
     async def rodar():
         historico = []
         for msg in testes:
-            print(f"\n👤 Vanessa: '{msg}'")
+            print(f"\nVanessa: '{msg}'")
             resultado = await processar_mensagem(msg, historico=historico)
-            print(f"🤖 Agente: {resultado['resposta']}")
-            print(f"   Ação: {resultado['acao']}")
+            print(f"Agente: {resultado['resposta']}")
+            print(f"Acao: {resultado['acao']}")
             print("-" * 55)
-
-            # Simula acúmulo de histórico
             historico.append({"role": "user", "content": msg})
             historico.append({"role": "assistant", "content": resultado["resposta"]})
 
