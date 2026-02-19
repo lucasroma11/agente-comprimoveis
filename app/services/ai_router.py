@@ -6,6 +6,7 @@ FIX: Client Gemini com inicialização lazy para evitar api_key=None no import
 import os
 import json
 import asyncio
+import unicodedata
 from datetime import datetime
 from loguru import logger
 from dotenv import load_dotenv
@@ -108,44 +109,62 @@ PALAVRAS_AUTOMACAO = [
 
 
 # ============================================================
+# NORMALIZADOR DE TEXTO (remove acentos para comparação)
+# ============================================================
+
+def _sem_acento(texto: str) -> str:
+    """
+    Converte texto para minúsculas e remove acentos.
+    'Condomínios' → 'condominios'   'prédio' → 'predio'
+    Necessário porque as listas de palavras não têm acentos,
+    mas os usuários digitam texto acentuado.
+    """
+    return (
+        unicodedata.normalize("NFKD", texto)
+        .encode("ascii", "ignore")
+        .decode("ascii")
+        .lower()
+    )
+
+
+# ============================================================
 # CLASSIFICADOR DE INTENÇÃO
 # ============================================================
 
 def classificar_intencao(mensagem: str) -> str:
     """Classifica a intenção da mensagem.
-    Verifica combinações específicas antes de palavras genéricas.
+    PRIORIDADE: Se menciona condomínios → sempre retorna 'condominios'.
+    Usa normalização unicode para ignorar acentos na comparação.
     """
-    msg = mensagem.lower()
+    msg = _sem_acento(mensagem)   # "Condomínios" → "condominios"
 
     # AUTOMAÇÃO
     for p in PALAVRAS_AUTOMACAO:
         if p in msg:
             return "automacao"
-    
-    # CONDOMÍNIOS (verifica se tem "condominio" OU "prédio" na mensagem)
-    if "condominio" in msg or "condominios" in msg or "predio" in msg or "prédio" in msg or "prédios" in msg:
-        # Se tem essas palavras + pergunta (quais, lista, ver, mostrar) = quer listar condomínios
-        if any(p in msg for p in ["quais", "lista", "listar", "mostrar", "ver", "quantos", "quem"]):
-            return "condominios"
-        # Se só tem "condomínios" mas sem verbo de listagem, pode ser conversa
-        return "condominios"
-    
+
+    # CONDOMÍNIOS — verificação explícita e direta (sem acentos)
+    palavras_cond = ["condominio", "condominios", "predio", "predios"]
+    for palavra in palavras_cond:
+        if palavra in msg:
+            return "condominios"   # retorna IMEDIATAMENTE
+
     # CRIAR
     for p in PALAVRAS_CRIAR:
         if p in msg:
             return "criar"
-    
+
     # CONCLUIR
     for p in PALAVRAS_CONCLUIR:
         if p in msg:
             return "concluir"
-    
+
     # ANALISAR
     for p in PALAVRAS_ANALISAR:
         if p in msg:
             return "analisar"
-    
-    # LISTAR (só chega aqui se NÃO tem "condomínio" na mensagem)
+
+    # LISTAR (só chega aqui se NÃO mencionou condomínios)
     for p in PALAVRAS_LISTAR:
         if p in msg:
             return "listar"
@@ -508,8 +527,63 @@ async def processar_mensagem(mensagem: str, historico: list = None) -> dict:
 
 
 # ============================================================
+# TESTE DO CLASSIFICADOR (rode antes de commitar)
+# ============================================================
+
+def _testar_classificacao():
+    """Testa todos os cenários do classificador sem chamar a API."""
+    testes = [
+        # Condomínios COM acento (bug original)
+        ("Quais condomínios atendemos?",     "condominios"),
+        ("Lista os condomínios",             "condominios"),
+        ("Mostre os prédios",                "condominios"),
+        # Condomínios SEM acento
+        ("Quais condominios atendemos?",     "condominios"),
+        ("Lista os condominios",             "condominios"),
+        ("Mostre os predios",                "condominios"),
+        # Listar tarefas (NÃO deve ir para condominios)
+        ("Quais tarefas tenho?",             "listar"),
+        ("Liste pendentes",                  "listar"),
+        ("Mostrar tarefas do mes",           "listar"),
+        # Criar
+        ("Adicione boleto Light",            "criar"),
+        ("Adiciona reuniao sindico",         "criar"),
+        # Concluir
+        ("Marca como concluído",             "concluir"),
+        ("Marcar como pago",                 "concluir"),
+        # Analisar
+        ("Analisa minhas pendencias",        "analisar"),
+        ("Prioriza as urgentes",             "analisar"),
+        # Conversa
+        ("Olá, tudo bem?",                   "conversa"),
+    ]
+
+    print("\nTESTANDO CLASSIFICACAO DE INTENCAO:\n")
+    todos_passaram = True
+    for mensagem, esperado in testes:
+        resultado = classificar_intencao(mensagem)
+        ok = resultado == esperado
+        status = "OK" if ok else "FALHOU"
+        print(f"  [{status}] '{mensagem}' -> {resultado} (esperado: {esperado})")
+        if not ok:
+            todos_passaram = False
+
+    print()
+    if todos_passaram:
+        print("TODOS OS TESTES PASSARAM!")
+    else:
+        print("ALGUNS TESTES FALHARAM - CORRIJA ANTES DE COMMITAR")
+
+    return todos_passaram
+
+
+# ============================================================
 # TESTE LOCAL
 # ============================================================
+
+if __name__ == "__main__":
+    _testar_classificacao()
+    print()
 
 if __name__ == "__main__":
     testes = [
