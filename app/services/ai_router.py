@@ -111,7 +111,7 @@ PALAVRAS_AUTOMACAO = [
 # CLASSIFICADOR DE INTENÇÃO
 # ============================================================
 
-ddef classificar_intencao(mensagem: str) -> str:
+def classificar_intencao(mensagem: str) -> str:
     """Classifica a intenção da mensagem.
     Verifica combinações específicas antes de palavras genéricas.
     """
