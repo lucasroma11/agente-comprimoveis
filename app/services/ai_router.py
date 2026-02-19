@@ -66,9 +66,12 @@ def _get_client() -> genai.Client:
 # ============================================================
 
 PALAVRAS_CONDOMINIOS = [
-    "condominios", "condominio", "quais condominios", "lista condominios",
-    "que condominios", "quais sao", "condominios temos", "condominios tem",
+    "condominios", "condominio",
+    "quais condominios", "lista condominios",
+    "que condominios", "quais sao", 
+    "condominios temos", "condominios tem",
     "condominios ativos", "condominios cadastrados",
+    "quais prédios", "que prédios",  # adiciona variações
 ]
 
 PALAVRAS_CRIAR = [
@@ -114,21 +117,31 @@ def classificar_intencao(mensagem: str) -> str:
     """
     msg = mensagem.lower()
 
+    # AUTOMAÇÃO
     for p in PALAVRAS_AUTOMACAO:
         if p in msg:
             return "automacao"
-    for p in PALAVRAS_CONDOMINIOS:
-        if p in msg:
-            return "condominios"
+    
+    # CONDOMÍNIOS (verifica combinações primeiro)
+    if any(palavra in msg for palavra in ["condominio", "condominios", "prédio", "prédios"]):
+        return "condominios"
+    
+    # CRIAR
     for p in PALAVRAS_CRIAR:
         if p in msg:
             return "criar"
+    
+    # CONCLUIR
     for p in PALAVRAS_CONCLUIR:
         if p in msg:
             return "concluir"
+    
+    # ANALISAR
     for p in PALAVRAS_ANALISAR:
         if p in msg:
             return "analisar"
+    
+    # LISTAR
     for p in PALAVRAS_LISTAR:
         if p in msg:
             return "listar"
